@@ -7,7 +7,15 @@ import 'package:provider/provider.dart';
 
 import '../screens/chat/chat_controller.dart';
 
-const imageTypes = XTypeGroup(label: 'images', extensions: ['jpg', 'png']);
+const imageTypes = XTypeGroup(
+    label: 'images',
+    extensions: ['jpg', 'jpeg', 'png', 'svg', 'webp'],
+    uniformTypeIdentifiers: ['public.image']);
+
+const allFilesTypeGroup = XTypeGroup(
+  label: 'all files',
+  uniformTypeIdentifiers: ['public.data'], // For general binary files on iOS
+);
 
 class PromptField extends StatefulWidget {
   const PromptField({super.key});
@@ -44,20 +52,22 @@ class PromptFieldState extends State<PromptField> {
                 children: [
                   Expanded(
                     child: TextField(
-                      controller: controller.promptFieldController,
-                      maxLines: maxLines,
-                      decoration: InputDecoration(
-                        label: Text(AppLocalizations.of(context)!.yourPrompt),
-                        border: const OutlineInputBorder(),
-                        suffixIcon: _PromptActionBar(
-                          minimized: minimized,
-                          onFileContentAdded: () =>
-                              setState(() => minimized = false),
+                        controller: controller.promptFieldController,
+                        maxLines: maxLines,
+                        decoration: InputDecoration(
+                          label: Text(AppLocalizations.of(context)!.yourPrompt),
+                          border: const OutlineInputBorder(),
+                          suffixIcon: _PromptActionBar(
+                            minimized: minimized,
+                            onFileContentAdded: () =>
+                                setState(() => minimized = false),
+                          ),
+                          floatingLabelBehavior: FloatingLabelBehavior.never,
                         ),
-                        floatingLabelBehavior: FloatingLabelBehavior.never,
-                      ),
-                      onEditingComplete: controller.chat,
-                    ),
+                        onEditingComplete: () async {
+                          await controller.chat();
+                          controller.deleteImage();
+                        }),
                   ),
                   IconButton(
                     onPressed: () => setState(() => minimized = !minimized),
@@ -123,21 +133,21 @@ class _PromptActionBar extends StatelessWidget {
       children: [
         IconButton(
           icon: const Icon(Icons.add_photo_alternate),
-          tooltip: 'Add an image ( only multimodal model )',
+          tooltip: AppLocalizations.of(context)?.addImage,
           onPressed: () async {
             final selectedImage =
                 await openFile(acceptedTypeGroups: [imageTypes]);
-
             controller.addImage(selectedImage);
           },
         ),
         IconButton(
           icon: const Icon(Icons.post_add),
-          tooltip: 'Insert a file content',
+          tooltip: AppLocalizations.of(context)?.insertFile,
           onPressed: () async {
-            final file = await openFile();
+            // final file = await openFile();
+            final file =
+                await openFile(acceptedTypeGroups: [allFilesTypeGroup]);
             final fileContent = await file?.readAsString();
-
             if (fileContent != null) {
               controller.promptFieldController.text =
                   '${controller.promptFieldController.text}\n$fileContent';
@@ -147,7 +157,10 @@ class _PromptActionBar extends StatelessWidget {
         ),
         if (controller.promptFieldController.text.isNotEmpty)
           IconButton(
-            onPressed: controller.chat,
+            onPressed: () async {
+              controller.chat();
+              controller.deleteImage();
+            },
             icon: const Icon(Icons.send),
           ),
       ],

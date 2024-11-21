@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/widgets.dart';
@@ -11,35 +10,27 @@ import '../../db.dart';
 import '../../model.dart';
 
 Conversation emptyConversationWith(String model) => Conversation(
-      lastUpdate: DateTime.now(),
-      model: model,
-      title: 'Chat',
-      messages: [],
-    );
+  lastUpdate: DateTime.now(),
+  model: model,
+  title: 'Chat',
+  messages: [],
+);
 
 class ChatController {
   final _log = Logger('ChatController');
-
   final OllamaClient _client;
-
   final ConversationService _conversationService;
 
   final promptFieldController = TextEditingController();
-
   ScrollController scrollController = ScrollController();
 
   ValueNotifier<XFile?> selectedImage = ValueNotifier(null);
-
   final ValueNotifier<Model?> model;
-
   final ValueNotifier<Conversation> conversation;
-
   final ValueNotifier<(String, String)> lastReply = ValueNotifier(('', ''));
-
   final ValueNotifier<bool> loading = ValueNotifier(false);
-
   final ValueNotifier<AsyncData<List<Conversation>>> conversations =
-      ValueNotifier(const Data([]));
+  ValueNotifier(const Data([]));
 
   ChatController({
     required OllamaClient client,
@@ -55,115 +46,84 @@ class ChatController {
 
   Future<void> loadHistory() async {
     conversations.value = const Pending();
-
     try {
       conversations.value =
           Data(await _conversationService.loadConversations());
     } catch (err) {
       _log.severe('ERROR !!! loadHistory $err');
-      //conversations.value = AsErr
     }
   }
 
-  /*Future<void> generate() async {
-    final name = model.name;
+  Future<void> chat() async {
+    if (model.value == null) return;
 
+    final name = model.value!.model;
+    final question = promptFieldController.text;
     final image = selectedImage.value;
+
+    if (name!.isEmpty || question.isEmpty) return;
+
+    loading.value = true;
     String? b64Image;
 
     if (image != null) {
-      b64Image = base64Encode(await image.readAsBytes());
+      b64Image = base64Encode(await image.readAsBytes()); // Encode image
     }
 
-    if (name != null) {
-      loading.value = true;
-      lastReply.value = (promptFieldController.text, '');
-      final request = GenerateCompletionRequest(
-        model: name,
-        prompt: promptFieldController.text,
-        images: b64Image != null ? [b64Image] : null,
-      );
-      final streamResponse = _client.generateCompletionStream(request: request);
+    lastReply.value = (question, '');
 
-      await for (final chunk in streamResponse) {
-        lastReply.value = (
-          lastReply.value.$1,
-          '${lastReply.value.$2}${chunk.response ?? ''}'
-        );
-      }
+    // Add the user's question and image to the conversation
+    final newMessages = [
+      ...conversation.value.messages,
+      (question, b64Image ?? ''), // Include the image's Base64 if present
+    ];
+    conversation.value = conversation.value.copyWith(newMessages: newMessages);
 
-      final messages = conversation.value.messages;
-      conversation.value = conversation.value
-          .copyWith(newMessages: messages..add(lastReply.value));
-
-      loading.value = false;
-      promptFieldController.clear();
-    }
-  }*/
-
-  Future<void> chat() async {
-    if (model.value == null) return;
-    scrollController = ScrollController();
-
-    final name = model.value!.model;
-    loading.value = true;
-
-    if (name != null) {
-      loading.value = true;
-      final question = promptFieldController.text;
-      lastReply.value = (question, '');
-
-      final image = selectedImage.value;
-      String? b64Image;
-
-      if (image != null) {
-        b64Image = base64Encode(await image.readAsBytes());
-      }
-
-      final generateChatCompletionRequest = GenerateChatCompletionRequest(
-        model: name,
-        messages: [
-          for (final qa in conversation.value.messages) ...[
-            Message(role: MessageRole.user, content: qa.$1),
-            Message(role: MessageRole.assistant, content: qa.$2),
-          ],
-          Message(
-            role: MessageRole.user,
-            content: question,
-            images: b64Image != null ? [b64Image] : null,
-          ),
+    final generateChatCompletionRequest = GenerateChatCompletionRequest(
+      model: name,
+      messages: [
+        for (final qa in conversation.value.messages) ...[
+          Message(role: MessageRole.user, content: qa.$1),
+          Message(role: MessageRole.assistant, content: qa.$2),
         ],
-      );
+        Message(
+          role: MessageRole.user,
+          content: question,
+          images: b64Image != null ? [b64Image] : null, // Attach the image
+        ),
+      ],
+    );
 
+    try {
       final streamResponse = _client.generateChatCompletionStream(
         request: generateChatCompletionRequest,
       );
 
+      String responseText = '';
+
       await for (final chunk in streamResponse) {
-        lastReply.value = (
-          lastReply.value.$1,
-          '${lastReply.value.$2}${chunk.message.content ?? ''}'
+        responseText += chunk.message.content ?? '';
+
+        // Update the conversation with the response
+        conversation.value = conversation.value.copyWith(
+          newMessages: [
+            ...newMessages,
+            (question, responseText),
+          ],
         );
 
+        lastReply.value = (question, responseText); // Update the live reply
         scrollToEnd();
       }
 
-      final messages = conversation.value.messages;
-
-      final firstQuestion = messages.isNotEmpty ? messages.first.$1 : question;
-      conversation.value = conversation.value.copyWith(
-        newMessages: messages..add(lastReply.value),
-        newTitle:
-            firstQuestion /*firstQuestion.substring(0, min(firstQuestion.length, 20))*/,
-      );
-
       _conversationService.saveConversation(conversation.value);
       loadHistory();
-
+    } catch (e) {
+      _log.severe('Error during chat: $e');
+    } finally {
       loading.value = false;
       promptFieldController.clear();
-
-      Future.delayed(const Duration(milliseconds: 100), scrollToEnd);
+      selectedImage.value = null; // Clear the selected image after submission
     }
   }
 
@@ -190,12 +150,7 @@ class ChatController {
   }
 
   void newConversation() {
-    conversation.value = Conversation(
-      lastUpdate: DateTime.now(),
-      model: model.value?.model ?? '/',
-      title: 'New Chat',
-      messages: [],
-    );
+    conversation.value = emptyConversationWith(model.value?.model ?? '/');
   }
 
   Future<void> deleteConversation(Conversation deletecConversation) async {

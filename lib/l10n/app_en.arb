@@ -8,5 +8,8 @@
   "error": "Error",
   "searchModel": "Search model",
   "newConversation": "New conversation",
-  "yourPrompt": "Your prompt..."
+  "yourPrompt": "Your prompt...",
+  "addImage": "Add an image ( only multimodal model )",
+  "insertFile": "Insert a file content",
+  "newChat": "New Chat"
 }
