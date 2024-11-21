@@ -40,10 +40,10 @@ dependencies:
 
   cupertino_icons: ^1.0.8
   collection: ^1.18.0
-  flutter_markdown: ^0.7.1
   file_selector: ^1.0.3
-  highlight: ^0.7.0
+  flutter_markdown: ^0.7.1
   flutter_highlight: ^0.7.0
+  highlight: ^0.7.0
   logging: ^1.2.0
   markdown: ^7.2.2
   ollama_dart: ^0.2.2
