@@ -1,0 +1,12 @@
+{
+  "ollama": "올라마",
+  "pullANewModel": "새 모델 가져오기",
+  "modelName": "모델 이름",
+  "errorLoadModel": "오류: 모델을 로드할 수 없습니다. Ollama를 설치하고 실행하세요",
+  "retry": "재시도",
+  "chat": "채팅",
+  "error": "오류",
+  "searchModel": "모델 검색",
+  "newConversation": "새 대화",
+  "yourPrompt": "당신의 프롬프트..."
+}

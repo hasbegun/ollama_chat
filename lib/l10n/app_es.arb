@@ -1,0 +1,12 @@
+{
+  "ollama": "Ollama",
+  "pullANewModel": "Descargar un nuevo modelo",
+  "modelName": "Nombre del modelo",
+  "errorLoadModel": "Error: No se pueden cargar los modelos. Instale y ejecute Ollama",
+  "retry": "Reintentar",
+  "chat": "Chat",
+  "error": "Error",
+  "searchModel": "Buscar modelo",
+  "newConversation": "Nueva conversación",
+  "yourPrompt": "Tu mensaje..."
+}
