@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../../async_result.dart';
@@ -65,7 +66,7 @@ class _ChatHistoryViewState extends State<ChatHistoryView> {
                           ),
                         ),
                         TextButton.icon(
-                          label: const Text('New conversation'),
+                          label: Text(AppLocalizations.of(context)!.newConversation),
                           onPressed: widget.onNewChat,
                           icon: const Icon(Icons.add),
                         ),

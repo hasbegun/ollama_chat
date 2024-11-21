@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../model_controller.dart';
@@ -66,9 +67,9 @@ class NollamaScreen extends StatelessWidget {
     final modelController = context.read<ModelController>();
 
     return ErrorScreen(
-      msg: "Error : Can't load models. Install and launch Ollama",
+      msg: AppLocalizations.of(context)!.errorLoadModel,
       errorAction: modelController.loadModels,
-      errorActionLabel: 'Retry',
+      errorActionLabel: AppLocalizations.of(context)!.retry,
       errorActionIcon: Icons.refresh,
     );
   }

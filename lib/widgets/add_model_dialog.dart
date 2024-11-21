@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:logging/logging.dart';
 import 'package:ollama_dart/ollama_dart.dart';
 import 'package:provider/provider.dart';
@@ -98,8 +99,7 @@ class AddModelDialog extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Pull a new model',
+                Text(AppLocalizations.of(context)!.pullANewModel,
                   style: textTheme.titleMedium,
                 ),
                 IconButton(
@@ -191,7 +191,7 @@ class _NameField extends StatelessWidget {
     return TextField(
       controller: fieldController,
       decoration: InputDecoration(
-        label: const Text('Model name'),
+        label: Text(AppLocalizations.of(context)!.modelName),
         isDense: true,
         suffixIcon: name.isNotEmpty
             ? IconButton(

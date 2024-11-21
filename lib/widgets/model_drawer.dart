@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:ollama_dart/ollama_dart.dart';
 import 'package:provider/provider.dart';
 
@@ -197,7 +198,7 @@ class _FilterField extends StatelessWidget {
         child: TextField(
           controller: controller,
           decoration: InputDecoration(
-            label: const Text('Search model'),
+            label: Text(AppLocalizations.of(context)!.searchModel),
             prefixIcon: const Icon(Icons.search),
             suffixIcon: IconButton(
               onPressed: () {

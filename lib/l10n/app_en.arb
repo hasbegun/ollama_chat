@@ -1,6 +1,12 @@
 {
-  "helloWorld": "Hello World!",
-  "@helloWorld": {
-    "description": "The conventional newborn programmer greeting"
-  }
+  "ollama": "Ollama",
+  "pullANewModel": "Pull a new model",
+  "modelName": "Model name",
+  "errorLoadModel": "Error : Can't load models. Install and launch Ollama",
+  "retry": "retry",
+  "chat": "Chat",
+  "error": "Error",
+  "searchModel": "Search model",
+  "newConversation": "New conversation",
+  "yourPrompt": "Your prompt..."
 }
