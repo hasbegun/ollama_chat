@@ -2,7 +2,7 @@
 
 [//]: # (<img src="assets/app_icons/dauillamma.jpg" width="720">)
 
-a DArt(Flutter) UI for local [Ollama](https://ollama.com) API
+Flutter UI for local [Ollama](https://ollama.com) API
 
 - uses [Ollama Dart](https://pub.dev/packages/ollama_dart)
 
@@ -55,3 +55,5 @@ ___
 ---
 
 <img src="assets/screenshots/light.png" width="720">
+
+This project is inspired by Dauillama (https://github.com/rxlabz/dauillama)
