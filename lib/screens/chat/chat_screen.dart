@@ -72,27 +72,9 @@ class ChatScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-
-                    // Expanded(
-                    //   child: loading
-                    //       ? const Center(
-                    //           child: CircularProgressIndicator(),
-                    //         )
-                    //       : ListView(
-                    //           controller: chatController.scrollController,
-                    //           children: [
-                    //             for (final qa in messages) QAView(qa: qa),
-                    //           ],
-                    //         ),
-                    // ),
-
                     Expanded(
                       child: loading
-                          ?
-                      // const Center(
-                      //   child: CircularProgressIndicator(),
-                      // )
-                      ValueListenableBuilder(
+                          ? ValueListenableBuilder(
                               valueListenable: chatController.lastReply,
                               builder: (context, reply, _) => loading &&
                                       chatController.lastReply.value.$2.isEmpty
@@ -108,7 +90,6 @@ class ChatScreen extends StatelessWidget {
                               ],
                             ),
                     ),
-
                     const PromptField(),
                   ],
                 );
@@ -197,68 +178,45 @@ class QAView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
-    final imageWidth = screenWidth * 0.7;
+    final imageWidth = screenWidth * 0.7; // Adjust image to 70% of the screen width
 
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Display the user question
-          ChatHeader(question: qa.$1),
-          const Divider(),
-
-          // Display the image if present
-          if (qa.$2.isNotEmpty &&
-              qa.$2.startsWith('/9j/')) // Base64 JPEG header
+          // Display user input text or placeholder for image
+          if (qa.$1 == '[Image]' && qa.$2.isNotEmpty) // Handle images
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: Image.memory(
-                base64Decode(qa.$2), // Decode the Base64 image
+                base64Decode(qa.$2), // Decode Base64 image
                 fit: BoxFit.contain,
-                width: imageWidth, // Adjust width to 70% of screen width
+                width: imageWidth, // Scale image proportionally
               ),
-            ),
+            )
+          else if (qa.$1.isNotEmpty) // Handle normal text input
+            ChatHeader(question: qa.$1),
+          const Divider(),
 
-          // Display the server response or Markdown content
-          if (qa.$2.isNotEmpty &&
-              !_isBase64Image(qa.$2)) // Ensure it's not an image
+          // Display server response
+          if (qa.$2.isNotEmpty && qa.$1 != '[Image]') // Ensure it's not an image
             DecoratedBox(
               decoration: BoxDecoration(
                 color: theme.canvasColor,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Markdown(
-                data: qa.$2,
-                selectable: true,
-                syntaxHighlighter: MdHightLighter(editorHighlighterStyle),
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(14),
-                styleSheetTheme: MarkdownStyleSheetBaseTheme.material,
-                inlineSyntaxes: const [],
-                extensionSet: md.ExtensionSet.gitHubWeb,
-                shrinkWrap: true,
-                builders: {'code': CodeElementBuilder()},
-                onSelectionChanged: (_, __, ___) {},
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: MarkdownBody(
+                  data: qa.$2, // Render server response
+                  styleSheet: MarkdownStyleSheet.fromTheme(theme),
+                ),
               ),
             ),
         ],
       ),
     );
-  }
-
-  bool _isBase64Image(String data) {
-    try {
-      // Validate the header for Base64 JPEG/PNG images
-      if (data.startsWith('/9j/') || data.startsWith('iVBORw0')) {
-        base64Decode(data); // Try decoding to confirm it's valid Base64
-        return true;
-      }
-    } catch (_) {
-      return false; // Not valid Base64 or not an image
-    }
-    return false;
   }
 }
 
@@ -274,15 +232,13 @@ class ChatHeader extends StatelessWidget {
         const Padding(
           padding: EdgeInsets.only(right: 12),
           child: Icon(Icons.chat, color: Colors.blueGrey),
-          // const SizedBox(width: 8),
         ),
         Flexible(
           child: Text(
             question,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  // Updated property
-                  fontWeight: FontWeight.bold,
-                ),
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ],

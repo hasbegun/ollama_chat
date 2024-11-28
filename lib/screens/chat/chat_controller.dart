@@ -66,17 +66,22 @@ class ChatController {
     loading.value = true;
     String? b64Image;
 
+    // If an image is uploaded, encode it as Base64
     if (image != null) {
-      b64Image = base64Encode(await image.readAsBytes()); // Encode image
+      b64Image = base64Encode(await image.readAsBytes());
     }
 
-    lastReply.value = (question, '');
-
-    // Add the user's question and image to the conversation
+    // Add the user's question to the conversation
     final newMessages = [
       ...conversation.value.messages,
-      (question, b64Image ?? ''), // Include the image's Base64 if present
+      (question, ''), // Add the user's input first
     ];
+
+    // Add the image as a separate message, if present
+    if (b64Image != null) {
+      newMessages.add(('[Image]', b64Image)); // Placeholder text for clarity
+    }
+
     conversation.value = conversation.value.copyWith(newMessages: newMessages);
 
     final generateChatCompletionRequest = GenerateChatCompletionRequest(
@@ -89,7 +94,7 @@ class ChatController {
         Message(
           role: MessageRole.user,
           content: question,
-          images: b64Image != null ? [b64Image] : null, // Attach the image
+          images: b64Image != null ? [b64Image] : null,
         ),
       ],
     );
@@ -104,14 +109,11 @@ class ChatController {
       await for (final chunk in streamResponse) {
         responseText += chunk.message.content ?? '';
 
-        // Update the conversation with the response
-        conversation.value = conversation.value.copyWith(
-          newMessages: [
-            ...newMessages,
-            (question, responseText),
-          ],
-        );
+        // Append the server's response as a new message
+        final updatedMessages = List.of(newMessages);
+        updatedMessages.add((question, responseText)); // Add the response
 
+        conversation.value = conversation.value.copyWith(newMessages: updatedMessages);
         lastReply.value = (question, responseText); // Update the live reply
         scrollToEnd();
       }
@@ -123,7 +125,7 @@ class ChatController {
     } finally {
       loading.value = false;
       promptFieldController.clear();
-      selectedImage.value = null; // Clear the selected image after submission
+      selectedImage.value = null; // Clear the selected image
     }
   }
 
