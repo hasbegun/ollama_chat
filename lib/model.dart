@@ -14,17 +14,11 @@ extension ModelExtensions on Model {
 
 class Conversation {
   final String id;
-
   final String model;
-
   final double temperature;
-
   final DateTime lastUpdate;
-
   String get formattedDate => DateFormat('dd/MM/yyyy').format(lastUpdate);
-
   final String title;
-
   final List<(String, String)> messages;
 
   Conversation({

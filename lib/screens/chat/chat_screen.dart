@@ -14,6 +14,7 @@ import '../../widgets/chat_history/chat_history_view.dart';
 import '../../widgets/model_drawer.dart';
 import '../../widgets/model_info_view.dart';
 import '../../widgets/prompt_field.dart';
+
 import 'chat_controller.dart';
 
 class ChatScreen extends StatelessWidget {
@@ -48,14 +49,57 @@ class ChatScreen extends StatelessWidget {
               builder: (context, _) {
                 final loading = chatController.loading.value;
                 final messages = chatController.conversation.value.messages;
+                final model = chatController.conversation.value.model;
+                final date = chatController.conversation.value.formattedDate;
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (messages.isNotEmpty)
+                      Container(
+                        constraints: const BoxConstraints.tightForFinite(),
+                        margin: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: theme.canvasColor,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(model),
+                            Text(date),
+                          ],
+                        ),
+                      ),
+
+                    // Expanded(
+                    //   child: loading
+                    //       ? const Center(
+                    //           child: CircularProgressIndicator(),
+                    //         )
+                    //       : ListView(
+                    //           controller: chatController.scrollController,
+                    //           children: [
+                    //             for (final qa in messages) QAView(qa: qa),
+                    //           ],
+                    //         ),
+                    // ),
+
                     Expanded(
                       child: loading
-                          ? const Center(
-                              child: CircularProgressIndicator(),
+                          ?
+                      // const Center(
+                      //   child: CircularProgressIndicator(),
+                      // )
+                      ValueListenableBuilder(
+                              valueListenable: chatController.lastReply,
+                              builder: (context, reply, _) => loading &&
+                                      chatController.lastReply.value.$2.isEmpty
+                                  ? const Center(
+                                      child: CircularProgressIndicator(),
+                                    )
+                                  : const ChatInteractionView(),
                             )
                           : ListView(
                               controller: chatController.scrollController,
@@ -64,6 +108,7 @@ class ChatScreen extends StatelessWidget {
                               ],
                             ),
                     ),
+
                     const PromptField(),
                   ],
                 );
@@ -95,10 +140,33 @@ class MainAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Row(
         children: [
           Image.asset('assets/app_icons/tete_32.png', width: 32),
-          const SizedBox(width: 8),
-          Text(
-            AppLocalizations.of(context)!.ollama,
-            style: Theme.of(context).textTheme.titleLarge, // Updated property
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Text(
+              'Ollama-Chat',
+              style: TextStyle(color: Colors.blueGrey.shade700),
+            ),
+          ),
+          ValueListenableBuilder(
+            valueListenable: controller.currentModel,
+            builder: (final context, currentModel, _) => currentModel != null
+                ? Row(
+                    children: [
+                      Text(
+                        currentModel.model ?? '/',
+                        style: const TextStyle(color: Colors.blueGrey),
+                      ),
+                      IconButton(
+                        onPressed: () => showDialog(
+                          context: context,
+                          builder: (final context) =>
+                              ModelInfoView(model: currentModel),
+                        ),
+                        icon: const Icon(Icons.info),
+                      ),
+                    ],
+                  )
+                : const SizedBox.shrink(),
           ),
         ],
       ),
@@ -134,6 +202,7 @@ class QAView extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Display the user question
@@ -153,20 +222,43 @@ class QAView extends StatelessWidget {
             ),
 
           // Display the server response or Markdown content
-          if (!qa.$2.startsWith('/9j/')) // Ensure it's not an image
+          if (qa.$2.isNotEmpty &&
+              !_isBase64Image(qa.$2)) // Ensure it's not an image
             DecoratedBox(
               decoration: BoxDecoration(
                 color: theme.canvasColor,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: MarkdownBody(
-                data: qa.$2, // Render server response
-                styleSheet: MarkdownStyleSheet.fromTheme(theme),
+              child: Markdown(
+                data: qa.$2,
+                selectable: true,
+                syntaxHighlighter: MdHightLighter(editorHighlighterStyle),
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(14),
+                styleSheetTheme: MarkdownStyleSheetBaseTheme.material,
+                inlineSyntaxes: const [],
+                extensionSet: md.ExtensionSet.gitHubWeb,
+                shrinkWrap: true,
+                builders: {'code': CodeElementBuilder()},
+                onSelectionChanged: (_, __, ___) {},
               ),
             ),
         ],
       ),
     );
+  }
+
+  bool _isBase64Image(String data) {
+    try {
+      // Validate the header for Base64 JPEG/PNG images
+      if (data.startsWith('/9j/') || data.startsWith('iVBORw0')) {
+        base64Decode(data); // Try decoding to confirm it's valid Base64
+        return true;
+      }
+    } catch (_) {
+      return false; // Not valid Base64 or not an image
+    }
+    return false;
   }
 }
 
@@ -179,8 +271,11 @@ class ChatHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(Icons.chat, color: Colors.blueGrey),
-        const SizedBox(width: 8),
+        const Padding(
+          padding: EdgeInsets.only(right: 12),
+          child: Icon(Icons.chat, color: Colors.blueGrey),
+          // const SizedBox(width: 8),
+        ),
         Flexible(
           child: Text(
             question,
@@ -191,6 +286,52 @@ class ChatHeader extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class ChatInteractionView extends StatelessWidget {
+  const ChatInteractionView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = context.read<ChatController>();
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: ValueListenableBuilder(
+        valueListenable: controller.lastReply,
+        builder: (context, qa, _) => SingleChildScrollView(
+          controller: controller.scrollController,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ChatHeader(question: qa.$1),
+              const Divider(),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: theme.appBarTheme.backgroundColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Markdown(
+                  data: qa.$2.isEmpty ? '' : qa.$2,
+                  /*selectable: true,*/
+                  syntaxHighlighter: MdHightLighter(editorHighlighterStyle),
+                  padding: const EdgeInsets.all(42),
+                  styleSheetTheme: MarkdownStyleSheetBaseTheme.material,
+                  inlineSyntaxes: const [],
+                  extensionSet: md.ExtensionSet.gitHubWeb,
+                  onSelectionChanged: (_, __, ___) {},
+                  shrinkWrap: true,
+                  builders: {'code': CodeElementBuilder()},
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

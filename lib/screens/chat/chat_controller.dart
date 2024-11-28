@@ -10,11 +10,11 @@ import '../../db.dart';
 import '../../model.dart';
 
 Conversation emptyConversationWith(String model) => Conversation(
-  lastUpdate: DateTime.now(),
-  model: model,
-  title: 'Chat',
-  messages: [],
-);
+      lastUpdate: DateTime.now(),
+      model: model,
+      title: 'Chat',
+      messages: [],
+    );
 
 class ChatController {
   final _log = Logger('ChatController');
@@ -30,7 +30,7 @@ class ChatController {
   final ValueNotifier<(String, String)> lastReply = ValueNotifier(('', ''));
   final ValueNotifier<bool> loading = ValueNotifier(false);
   final ValueNotifier<AsyncData<List<Conversation>>> conversations =
-  ValueNotifier(const Data([]));
+      ValueNotifier(const Data([]));
 
   ChatController({
     required OllamaClient client,
