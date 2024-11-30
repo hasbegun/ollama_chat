@@ -124,7 +124,7 @@ class MainAppBar extends StatelessWidget implements PreferredSizeWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Text(
-              'Ollama-Chat',
+              AppLocalizations.of(context)!.ollama,
               style: TextStyle(color: Colors.blueGrey.shade700),
             ),
           ),
@@ -157,73 +157,9 @@ class MainAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-/* Dynamic Display Logic in QAView
-  Images:
-    The condition checks if the response starts with /9j/, which is the Base64 header for JPEG images. If true, it decodes and displays the image.
-  Server Text/Markdown:
-    If the content is not an image, it is rendered as plain text or Markdown using MarkdownBody.
-
-Example of How Messages Are Stored:
-A message with an image:
-  ('What is this?', '/9j/4AAQSkZJRgABAQEAAAAAAAD/...')
-A message with only text:
-('What is the capital of France?', 'The capital of France is Paris.')
- */
-class QAView extends StatelessWidget {
-  final (String, String) qa;
-
-  const QAView({super.key, required this.qa});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
-    final imageWidth = screenWidth * 0.7; // Adjust image to 70% of the screen width
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Display user input text or placeholder for image
-          if (qa.$1 == '[Image]' && qa.$2.isNotEmpty) // Handle images
-            Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: Image.memory(
-                base64Decode(qa.$2), // Decode Base64 image
-                fit: BoxFit.contain,
-                width: imageWidth, // Scale image proportionally
-              ),
-            )
-          else if (qa.$1.isNotEmpty) // Handle normal text input
-            ChatHeader(question: qa.$1),
-          const Divider(),
-
-          // Display server response
-          if (qa.$2.isNotEmpty && qa.$1 != '[Image]') // Ensure it's not an image
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: theme.canvasColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: MarkdownBody(
-                  data: qa.$2, // Render server response
-                  styleSheet: MarkdownStyleSheet.fromTheme(theme),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 class ChatHeader extends StatelessWidget {
-  final String question;
-
   const ChatHeader({super.key, required this.question});
+  final String question;
 
   @override
   Widget build(BuildContext context) {
@@ -245,6 +181,71 @@ class ChatHeader extends StatelessWidget {
     );
   }
 }
+
+/* Dynamic Display Logic in QAView
+  Images:
+    The condition checks if the response starts with /9j/, which is the Base64 header for JPEG images. If true, it decodes and displays the image.
+  Server Text/Markdown:
+    If the content is not an image, it is rendered as plain text or Markdown using MarkdownBody.
+
+Example of How Messages Are Stored:
+A message with an image:
+  ('What is this?', '/9j/4AAQSkZJRgABAQEAAAAAAAD/...')
+A message with only text:
+('What is the capital of France?', 'The capital of France is Paris.')
+ */
+class QAView extends StatelessWidget {
+  const QAView({super.key, required this.qa});
+  final (String, String) qa;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final imageWidth =
+        screenWidth * 0.7; // Adjust image to 70% of the screen width
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Display user input text or placeholder for image
+          if (qa.$1 == '[Image]' && qa.$2.isNotEmpty) // Handle images
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Image.memory(
+                base64Decode(qa.$2), // Decode Base64 image
+                fit: BoxFit.contain,
+                width: imageWidth, // Scale image proportionally
+              ),
+            )
+          else if (qa.$1.isNotEmpty) // Handle normal text input
+            ChatHeader(question: qa.$1),
+          const Divider(),
+
+          // Display server response
+          if (qa.$2.isNotEmpty &&
+              qa.$1 != '[Image]') // Ensure it's not an image
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: theme.canvasColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: MarkdownBody(
+                  data: qa.$2, // Render server response
+                  styleSheet: MarkdownStyleSheet.fromTheme(theme),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 
 class ChatInteractionView extends StatelessWidget {
   const ChatInteractionView({super.key});

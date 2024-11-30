@@ -50,7 +50,7 @@ class ChatController {
       conversations.value =
           Data(await _conversationService.loadConversations());
     } catch (err) {
-      _log.severe('ERROR !!! loadHistory $err');
+      _log.severe('ERROR! loadHistory $err');
     }
   }
 
@@ -72,9 +72,13 @@ class ChatController {
     }
 
     // Add the user's question to the conversation
+    // final newMessages = [
+    //   ...conversation.value.messages,
+    //   (question, ''), // Add the user's input first
+    // ];
     final newMessages = [
       ...conversation.value.messages,
-      (question, ''), // Add the user's input first
+      ('', ''), // Add the user's input first
     ];
 
     // Add the image as a separate message, if present
